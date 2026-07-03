@@ -1,6 +1,6 @@
 # django-icv-core
 
-[![CI](https://github.com/nigelcopley/icv-oss/actions/workflows/ci.yml/badge.svg)](https://github.com/nigelcopley/icv-oss/actions/workflows/ci.yml)
+[![CI](https://github.com/nigelcopley/django-icv-core/actions/workflows/ci.yml/badge.svg)](https://github.com/nigelcopley/django-icv-core/actions/workflows/ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/django-icv-core.svg)](https://pypi.org/project/django-icv-core/)
 [![Python versions](https://img.shields.io/pypi/pyversions/django-icv-core.svg)](https://pypi.org/project/django-icv-core/)
 [![Django versions](https://img.shields.io/pypi/djversions/django-icv-core.svg)](https://pypi.org/project/django-icv-core/)
@@ -232,7 +232,7 @@ resolve_alert(alert, resolved_by=request.user, notes="Stripe incident resolved."
 
 `icv_core.tenancy` (`TenantAwareMixin`, `TenantOwnedMixin`, `TenantScopedManager`, and the `get/set/clear_current_tenant` context helpers) is **deprecated** and will be removed in a future release. Subclassing either mixin now emits a `DeprecationWarning`.
 
-Use [django-boundary](https://github.com/nigelcopley/icv-oss/tree/main/packages/django-boundary) instead — it provides row-level isolation backed by PostgreSQL Row Level Security, automatic query filtering, and a configurable tenant FK name.
+Use [django-boundary](https://github.com/nigelcopley/django-boundary) instead. It provides row-level isolation backed by PostgreSQL Row Level Security, automatic query filtering, and a configurable tenant FK name.
 
 | Deprecated (`icv_core.tenancy`) | Replacement (`django-boundary`) |
 |---|---|
