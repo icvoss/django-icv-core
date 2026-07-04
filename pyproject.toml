@@ -15,8 +15,7 @@ authors = [
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Framework :: Django",
-    "Framework :: Django :: 5.0",
-    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
     "Framework :: Django :: 6.0",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
@@ -33,7 +32,7 @@ keywords = [
     "timestamps",
 ]
 dependencies = [
-    "Django>=5.0",
+    "Django>=5.2",
 ]
 
 [project.urls]

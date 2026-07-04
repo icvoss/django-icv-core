@@ -28,7 +28,7 @@ Use it as a standalone package or as the base for other `django-icv-*` packages.
 ## Requirements
 
 - Python 3.11+
-- Django 4.2, 5.0, or 5.1
+- Django 5.2 or 6.0
 
 ---
 
