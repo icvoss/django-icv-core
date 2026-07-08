@@ -16,7 +16,7 @@ Practical guide for contributors working on this package.
 ## Local Development Setup
 
 ```bash
-git clone https://github.com/nigelcopley/django-icv-core.git
+git clone https://github.com/icvoss/django-icv-core.git
 cd django-icv-core
 
 # Create a virtual environment
