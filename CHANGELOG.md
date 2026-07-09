@@ -4,7 +4,15 @@ All notable changes to django-icv-core will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.4.0] - 2026-07-09
+
+### Changed
+
+- Minimum Django is now 5.2 (was 5.0). Django 5.2 and 6.0 are the
+  supported and CI-tested versions.
+- Packaging: the build backend now requires setuptools 77+ (PEP 639
+  SPDX licence metadata) and no longer lists wheel; project URLs point
+  at the icvoss GitHub organisation.
 
 ## [0.3.0] - 2026-06-24
 
