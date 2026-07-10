@@ -49,7 +49,7 @@ Or, if you have configured `[tool.pytest.ini_options]` in `pyproject.toml`
 pytest tests/ -v --tb=short
 ```
 
-The test suite uses SQLite — no PostgreSQL or other service is required.
+The test suite uses SQLite: no PostgreSQL or other service is required.
 
 ---
 
@@ -113,7 +113,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 | `chore` | Maintenance, version bumps, dependency updates |
 | `docs` | Documentation only |
 | `test` | Adding or updating tests |
-| `style` | Formatting, whitespace — no logic change |
+| `style` | Formatting, whitespace; no logic change |
 | `refactor` | Code change that is neither a fix nor a feature |
 
 ### Branches and PRs

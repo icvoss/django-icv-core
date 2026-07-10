@@ -6,7 +6,7 @@
 [![Django versions](https://img.shields.io/pypi/djversions/django-icv-core.svg)](https://pypi.org/project/django-icv-core/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-`django-icv-core` is the foundation layer for the ICV Django ecosystem. It gives every model in your project a UUID primary key, auto-managed timestamps, and optional soft-delete behaviour — with zero boilerplate. Add the optional audit subsystem and you get immutable event logs, admin activity tracking, and system alerts with a single setting.
+`django-icv-core` is the foundation layer for the ICV Django ecosystem. It gives every model in your project a UUID primary key, auto-managed timestamps, and optional soft-delete behaviour, with zero boilerplate. Add the optional audit subsystem and you get immutable event logs, admin activity tracking, and system alerts with a single setting.
 
 Use it as a standalone package or as the base for other `django-icv-*` packages.
 
@@ -14,14 +14,14 @@ Use it as a standalone package or as the base for other `django-icv-*` packages.
 
 ## Features
 
-- **`BaseModel`** — UUID primary key (v4 by default, v7 opt-in) and auto-managed `created_at`/`updated_at` timestamps
-- **`SoftDeleteModel`** — Safe record removal with `soft_delete()` and `restore()`; default manager excludes deleted records automatically
-- **`SoftDeleteManager` / `SoftDeleteQuerySet`** — `.active()`, `.deleted()`, `.with_deleted()` on every soft-delete model
-- **`CurrentUserMiddleware`** — Thread-local request user for automatic `created_by`/`updated_by` population
-- **Audit subsystem** (opt-in via `ICV_CORE_AUDIT_ENABLED`) — Immutable `AuditEntry`, `AdminActivityLog`, `SystemAlert`, `AuditMixin`, `@audited` decorator, and management commands
-- **Template tags** — `cents_to_currency`, `cents_to_amount`, `time_since_short`
-- **Django system checks** — Configuration validation at startup
-- **Test utilities** — `icv_core.testing` provides factory-boy factories and pytest fixtures for consuming projects
+- **`BaseModel`**: UUID primary key (v4 by default, v7 opt-in) and auto-managed `created_at`/`updated_at` timestamps
+- **`SoftDeleteModel`**: Safe record removal with `soft_delete()` and `restore()`; default manager excludes deleted records automatically
+- **`SoftDeleteManager` / `SoftDeleteQuerySet`**: `.active()`, `.deleted()`, `.with_deleted()` on every soft-delete model
+- **`CurrentUserMiddleware`**: Thread-local request user for automatic `created_by`/`updated_by` population
+- **Audit subsystem** (opt-in via `ICV_CORE_AUDIT_ENABLED`): Immutable `AuditEntry`, `AdminActivityLog`, `SystemAlert`, `AuditMixin`, `@audited` decorator, and management commands
+- **Template tags**: `cents_to_currency`, `cents_to_amount`, `time_since_short`
+- **Django system checks**: Configuration validation at startup
+- **Test utilities**: `icv_core.testing` provides factory-boy factories and pytest fixtures for consuming projects
 
 ---
 
@@ -59,7 +59,7 @@ python manage.py migrate
 
 ## Quick Start
 
-### BaseModel — UUID primary keys and timestamps
+### BaseModel: UUID primary keys and timestamps
 
 Inherit from `BaseModel` and every record gets a UUID primary key and automatic timestamps. No extra fields to define.
 
@@ -80,13 +80,13 @@ class Article(BaseModel):
 article = Article.objects.create(title="Hello, world", body="...")
 
 article.id          # UUID4: e.g. '3f2504e0-4f89-11d3-9a0c-0305e82c3301'
-article.created_at  # datetime — set on creation, never changes
-article.updated_at  # datetime — updated automatically on every save
+article.created_at  # datetime: set on creation, never changes
+article.updated_at  # datetime: updated automatically on every save
 ```
 
 ---
 
-### SoftDeleteModel — safe record removal
+### SoftDeleteModel: safe record removal
 
 Records are never hard-deleted by default. `soft_delete()` sets `is_active=False` and records the timestamp. The default manager silently excludes deleted records from all queries.
 
@@ -109,12 +109,12 @@ sub.deleted_at  # datetime
 
 # Default manager returns active records only
 Subscription.objects.all()          # excludes deleted records
-Subscription.objects.active()       # same as above — explicit alias
+Subscription.objects.active()       # same as above: explicit alias
 
 # Access deleted or all records when needed
 Subscription.objects.deleted()      # deleted records only
 Subscription.objects.with_deleted() # everything
-Subscription.all_objects.all()      # raw manager — no filtering applied
+Subscription.all_objects.all()      # raw manager: no filtering applied
 
 # Restore
 sub.restore()
@@ -128,7 +128,7 @@ Hard deletion is blocked unless you explicitly allow it:
 # Raises ProtectedError by default
 sub.delete()
 
-# Permanent removal — use deliberately
+# Permanent removal: use deliberately
 sub.hard_delete()
 
 # Or allow .delete() project-wide
@@ -137,7 +137,7 @@ ICV_CORE_ALLOW_HARD_DELETE = True
 
 ---
 
-### CurrentUserMiddleware — automatic created_by/updated_by
+### CurrentUserMiddleware: automatic created_by/updated_by
 
 Add the middleware to make the current request user available to models without passing it through every service call.
 
@@ -169,7 +169,7 @@ Enable the audit subsystem in settings:
 ICV_CORE_AUDIT_ENABLED = True
 ```
 
-**`AuditEntry`** — an immutable record of a system event. Raises `ImmutableRecordError` on update and `ProtectedError` on delete.
+**`AuditEntry`**: an immutable record of a system event. Raises `ImmutableRecordError` on update and `ProtectedError` on delete.
 
 ```python
 from icv_core.audit.services import log_event
@@ -185,7 +185,7 @@ log_event(
 )
 ```
 
-**`AuditMixin`** — add to any model to track CREATE, UPDATE, and DELETE automatically:
+**`AuditMixin`**: add to any model to track CREATE, UPDATE, and DELETE automatically:
 
 ```python
 from icv_core.audit.mixins import AuditMixin
@@ -197,7 +197,7 @@ class Contract(AuditMixin, BaseModel):
     value = models.DecimalField(max_digits=10, decimal_places=2)
 ```
 
-**`@audited` decorator** — wrap a view or service function to record its execution:
+**`@audited` decorator**: wrap a view or service function to record its execution:
 
 ```python
 from icv_core.audit.decorators import audited
@@ -209,7 +209,7 @@ def cancel_membership(user, membership):
     membership.soft_delete()
 ```
 
-**`SystemAlert`** — raise and resolve operational alerts:
+**`SystemAlert`**: raise and resolve operational alerts:
 
 ```python
 from icv_core.audit.services import raise_alert, resolve_alert
@@ -266,7 +266,7 @@ Use [django-boundary](https://github.com/icvoss/django-boundary) instead. It pro
 
 ## Settings reference
 
-All settings use the `ICV_CORE_` prefix. Every setting has a sensible default — only override what you need.
+All settings use the `ICV_CORE_` prefix. Every setting has a sensible default: only override what you need.
 
 ### Core
 
@@ -341,4 +341,4 @@ pytest_plugins = ["icv_core.testing.fixtures"]
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE).
+MIT: see [LICENSE](LICENSE).

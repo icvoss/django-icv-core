@@ -20,8 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - **`ICV_CORE_SOFT_DELETE_FIELD` setting** (and its `icv_core.E002` system
   check). The setting was inert: the soft-delete marker is the `is_active`
-  BooleanField declared on `SoftDeleteModel` — a real, indexed, migrated
-  column that cannot be renamed via a setting — and nothing read the setting.
+  BooleanField declared on `SoftDeleteModel` (a real, indexed, migrated
+  column that cannot be renamed via a setting) and nothing read the setting.
   It only misled consumers into thinking the field was configurable. Setting
   it had no effect before and has no effect now; no migration is required.
 
@@ -43,7 +43,7 @@ Promoted to Production/Stable.
 - `ComplianceModel.save()` auto-populates `created_by` (on insert) and
   `updated_by` (on every save) from `CurrentUserMiddleware` when
   `ICV_CORE_TRACK_CREATED_BY` is True. Explicit values are preserved.
-- UUID v7 support (RFC 9562) — when `ICV_CORE_UUID_VERSION=7`,
+- UUID v7 support (RFC 9562): when `ICV_CORE_UUID_VERSION=7`,
   `UUIDModel` generates time-sortable UUIDs using a pure-stdlib
   implementation. No third-party dependency required.
 - 28 new tests for ComplianceModel auto-population and UUID v7

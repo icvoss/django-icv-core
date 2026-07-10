@@ -2,7 +2,7 @@
 
 How to cut a release for this package. Releases are versioned with plain
 semver tags (`v<semver>`) and published independently to PyPI via OIDC
-trusted publishing — no token is required.
+trusted publishing: no token is required.
 
 ## TL;DR
 
@@ -24,7 +24,7 @@ undo.**
    - `src/icv_core/__init__.py`: update `__version__` (keep in sync)
    - `CHANGELOG.md`: rename `[Unreleased]` to `[<version>] - <YYYY-MM-DD>`
 3. **Open a PR** to `main`. CI runs lint and tests. Get it reviewed. This is the
-   gate — do not skip it.
+   gate: do not skip it.
 4. **Merge to `main`** (squash or merge, per repo norm).
 5. **Tag the merged commit on `main`** and push the tag:
    ```bash
@@ -40,13 +40,13 @@ undo.**
    ```
 
 > **Tag the commit that is on `main`, not a feature branch.** Tags point at
-> commits, not branches, so tagging a feature branch will publish — but it
+> commits, not branches, so tagging a feature branch will publish, but it
 > publishes code that may never have been merged. Always tag after the merge so
 > what is on PyPI is exactly what is on `main`.
 
 ## Tag format (strict)
 
-`v<semver>` — a plain `v` prefix followed by the version number.
+`v<semver>`: a plain `v` prefix followed by the version number.
 
 | Version | Tag example |
 | --- | --- |
@@ -76,7 +76,7 @@ with the usual pre-1.0 caveat that minor bumps may carry breaking changes:
 If in doubt between patch and minor, choose minor. Burning a version number is
 free; shipping a behaviour change as a patch surprises consumers.
 
-## CHANGELOG (required — every release)
+## CHANGELOG (required for every release)
 
 **A release must include a CHANGELOG entry for its version. No entry, no tag.**
 CI enforces this: the publish workflow greps `CHANGELOG.md` for a heading
@@ -85,11 +85,11 @@ matching the version before proceeding.
 [Keep a Changelog](https://keepachangelog.com/) format. Accumulate entries
 under `## [Unreleased]` as you work; at release time, rename that heading to
 `## [<version>] - <YYYY-MM-DD>`. Subsections: Added / Changed / Fixed / Removed.
-Call out behaviour changes explicitly, including ones that are "safer" — a
+Call out behaviour changes explicitly, including ones that are "safer": a
 consumer relying on the old behaviour still needs to know.
 
 The GitHub release body is auto-generated from the tag, but that is **not** a
-substitute for the curated CHANGELOG entry — write it by hand so consumers
+substitute for the curated CHANGELOG entry: write it by hand so consumers
 reading the package on PyPI or GitHub get a human-authored summary.
 
 ## Keep the CI Django pin in step with the floor
@@ -103,7 +103,7 @@ tagged build's test job can fail to resolve dependencies and block the publish.
 Before pushing the tag (the irreversible step):
 
 - [ ] **CHANGELOG has a `[<version>] - <date>` entry** (renamed from
-      `[Unreleased]`). This is mandatory — every release ships with a changelog.
+      `[Unreleased]`). This is mandatory: every release ships with a changelog.
 - [ ] Behaviour changes and breaking changes called out in that CHANGELOG entry.
 - [ ] Version bumped in `pyproject.toml` **and** `src/icv_core/__init__.py`, and
       they match.
@@ -116,7 +116,7 @@ Before pushing the tag (the irreversible step):
 ## If something goes wrong
 
 - **PyPI rejects the upload (version exists).** That version is permanently
-  taken — you cannot re-upload, even after deleting. Bump to the next patch and
+  taken: you cannot re-upload, even after deleting. Bump to the next patch and
   re-tag.
 - **The test/build job fails after tagging.** Nothing was published (publish is
   the last job and depends on test+build). Fix on a new PR, merge, delete the
@@ -130,6 +130,6 @@ Before pushing the tag (the irreversible step):
 
 Consider adding a **manual approval gate** to the `publish` job via a protected
 GitHub Environment (`pypi`), so "push tag" and "irreversibly upload to PyPI" are
-decoupled — a human approves the upload after seeing test+build go green. The
+decoupled: a human approves the upload after seeing test+build go green. The
 workflow already declares `environment: pypi`; add a required-reviewer protection
 rule to that environment to enable the gate.
