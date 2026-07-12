@@ -234,7 +234,7 @@ resolve_alert(alert, resolved_by=request.user, notes="Stripe incident resolved."
 
 ### Tenancy (deprecated)
 
-`icv_core.tenancy` (`TenantAwareMixin`, `TenantOwnedMixin`, `TenantScopedManager`, and the `get/set/clear_current_tenant` context helpers) is **deprecated** and will be removed in a future release. Subclassing either mixin now emits a `DeprecationWarning`.
+`icv_core.tenancy` (`TenantAwareMixin`, `TenantOwnedMixin`, `TenantScopedManager`, and the `get/set/clear_current_tenant` context helpers) is **deprecated** and will be **removed in icv-core 1.0.0** per [ADR-025](/Users/nigelcopley/Projects/oss/docs/adrs/ADR-025-ecosystem-responsibility-map.md) (ruling T3). Subclassing either mixin now emits a `DeprecationWarning`.
 
 Use [django-boundary](https://github.com/icvoss/django-boundary) instead. It provides row-level isolation backed by PostgreSQL Row Level Security, automatic query filtering, and a configurable tenant FK name.
 

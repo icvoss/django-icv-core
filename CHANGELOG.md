@@ -4,6 +4,22 @@ All notable changes to django-icv-core will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.4.1] - 2026-07-12
+
+### Fixed
+
+- State-only migration 0002 realigning the serialised `id` default on
+  `AdminActivityLog`, `AuditEntry`, and `SystemAlert` from `uuid.uuid4`
+  to `_make_uuid`, matching the 0.2.0 model change. Emits no SQL and
+  needs no database action; it stops `makemigrations --check` reporting
+  drift on icv-core's own concrete models. (#1)
+
+### Deprecated
+
+- `icv_core.tenancy` is deprecated and will be removed in 1.0.0; use
+  django-boundary (ADR-025 T3). No behaviour change; the module keeps
+  working and still emits its `DeprecationWarning` until 1.0.0.
+
 ## [0.4.0] - 2026-07-09
 
 ### Changed

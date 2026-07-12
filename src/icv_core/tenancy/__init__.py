@@ -5,7 +5,7 @@
     ``boundary.models.TenantModel`` instead of ``TenantAwareMixin``,
     ``boundary.context.TenantContext`` instead of ``get_current_tenant()``,
     etc. This module remains for backwards compatibility and will be
-    removed in a future release.
+    removed in icv-core 1.0.0 per ADR-025 (ruling T3); use django-boundary.
 
 Provides abstract mixins, managers, and context services for row-level tenant
 isolation. Schema-level tenancy (via django-tenants) is configured entirely in
@@ -33,7 +33,8 @@ from icv_core.tenancy.managers import TenantScopedManager, TenantScopedQuerySet
 from icv_core.tenancy.mixins import TenantAwareMixin, TenantOwnedMixin
 
 warnings.warn(
-    "icv_core.tenancy is deprecated. Use django-boundary instead. See APP-019 spec for migration guide.",
+    "icv_core.tenancy will be removed in icv-core 1.0.0 per ADR-025 (ruling T3); "
+    "use django-boundary. See APP-019 spec for migration guide.",
     DeprecationWarning,
     stacklevel=2,
 )

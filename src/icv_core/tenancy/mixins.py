@@ -21,9 +21,10 @@ from django.utils.translation import gettext_lazy as _
 from icv_core.tenancy.managers import TenantScopedManager
 
 _MIGRATION_HINT = (
-    "icv_core.tenancy.{name} is deprecated and will be removed in a future "
-    "release. Migrate to django-boundary: subclass boundary.models.TenantModel "
-    "(see APP-019 / the icv-core README 'Tenancy (deprecated)' section)."
+    "icv_core.tenancy.{name} is deprecated and will be removed in icv-core "
+    "1.0.0 per ADR-025 (ruling T3). Migrate to django-boundary: subclass "
+    "boundary.models.TenantModel (see APP-019 / the icv-core README "
+    "'Tenancy (deprecated)' section)."
 )
 
 
