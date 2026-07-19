@@ -4,6 +4,16 @@ All notable changes to django-icv-core will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Fixed
+
+- Package the PEP 561 `py.typed` marker in the built wheel. The marker
+  existed on disk but was never declared in `[tool.setuptools.package-data]`,
+  so setuptools dropped it from every published wheel and downstream type
+  checkers saw `icv_core` as untyped. Now declared and verified present in
+  the wheel.
+
 ## [0.4.1] - 2026-07-12
 
 ### Fixed
