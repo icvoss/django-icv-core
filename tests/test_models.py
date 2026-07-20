@@ -71,6 +71,50 @@ class TestUUIDModel:
         instance2.id = None
         assert field.pre_save(instance2, add=True).version == 4
 
+    def test_per_field_uuid_version_overrides_the_global_setting(self, settings):
+        """``VersionedUUIDField(uuid_version=7)`` pins a table to v7.
+
+        A per-field override wins over ``ICV_CORE_UUID_VERSION`` at insert
+        time, so one model can use v7 while the project default stays v4 (and
+        vice versa).
+        """
+        from icv_core.models.base import VersionedUUIDField
+
+        class _Dummy:
+            pass
+
+        settings.ICV_CORE_UUID_VERSION = 4  # project default is v4
+
+        v7_field = VersionedUUIDField(primary_key=True, uuid_version=7)
+        v7_field.attname = "id"
+        inst = _Dummy()
+        inst.id = None
+        assert v7_field.pre_save(inst, add=True).version == 7  # override wins
+
+        v4_field = VersionedUUIDField(primary_key=True, uuid_version=4)
+        v4_field.attname = "id"
+        settings.ICV_CORE_UUID_VERSION = 7  # project default now v7
+        inst2 = _Dummy()
+        inst2.id = None
+        assert v4_field.pre_save(inst2, add=True).version == 4  # override wins
+
+    def test_per_field_uuid_version_is_not_serialised(self):
+        """The ``uuid_version`` override must NOT appear in deconstruct().
+
+        Pinning a version is a runtime choice; it must not change the field's
+        migration state (still a plain ``UUIDField(default=uuid.uuid4)``), so it
+        generates no migration and preserves the issue-#19 drift fix.
+        """
+        import uuid as _uuid
+
+        from icv_core.models.base import VersionedUUIDField
+
+        field = VersionedUUIDField(primary_key=True, editable=False, uuid_version=7)
+        _name, path, _args, kwargs = field.deconstruct()
+        assert path == "django.db.models.UUIDField"
+        assert kwargs["default"] is _uuid.uuid4
+        assert "uuid_version" not in kwargs
+
     def test_uuid_version_7_returns_v7(self, settings):
         """When ICV_CORE_UUID_VERSION=7 is set, _make_uuid() returns a v7 UUID."""
         settings.ICV_CORE_UUID_VERSION = 7

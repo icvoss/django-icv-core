@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-07-20
+
+### Added
+
+- Per-model UUID version. `VersionedUUIDField` now accepts a `uuid_version`
+  argument (and is exported from `icv_core.models`), so a single table can pin
+  its primary key to v4 or v7 regardless of the project-wide
+  `ICV_CORE_UUID_VERSION`. Opt a high-write table into time-sorted v7 for index
+  locality without changing the default, or force v4 on a table whose id is
+  public and must not leak a creation timestamp. The override is runtime-only:
+  it is not part of the field's deconstruct/migration state, so pinning a
+  version generates no migration and preserves the issue-#19 drift fix.
+
 ## [0.4.3] - 2026-07-20
 
 ### Fixed

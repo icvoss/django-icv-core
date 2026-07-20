@@ -36,16 +36,20 @@ def _uuid7() -> uuid.UUID:
     return uuid.UUID(int=(hi << 64) | lo)
 
 
-def _make_uuid() -> uuid.UUID:
+def _make_uuid(version: int | None = None) -> uuid.UUID:
     """
-    Return a UUID whose version is determined by ``ICV_CORE_UUID_VERSION``.
+    Return a UUID whose version is determined by ``version`` if given, else by
+    the project-wide ``ICV_CORE_UUID_VERSION`` setting.
 
-    The setting is read at call time so that test overrides via ``pytest``
-    ``settings`` fixtures take effect without requiring a module reload.
+    An explicit ``version`` lets a single field opt into v7 (or v4) regardless
+    of the project default (see ``VersionedUUIDField(uuid_version=...)``). When
+    ``version`` is ``None`` the setting is read at call time, so test overrides
+    via ``pytest`` ``settings`` fixtures take effect without a module reload.
     """
-    from icv_core.conf import get_setting
+    if version is None:
+        from icv_core.conf import get_setting
 
-    version = get_setting("UUID_VERSION", 4)
+        version = get_setting("UUID_VERSION", 4)
     if version == 7:
         return _uuid7()
     return uuid.uuid4()
@@ -76,12 +80,32 @@ class VersionedUUIDField(models.UUIDField):
         ``ICV_CORE_UUID_VERSION`` v4/v7 switch), so the runtime behaviour is
         preserved.
 
-    The version is a per-deployment performance choice (a runtime setting), not
-    a data-model fact to bake into immutable migrations, so reporting the
-    stable ``uuid.uuid4`` in migrations is the correct, faithful serialisation.
+    The version is a runtime choice, not a data-model fact to bake into
+    immutable migrations, so reporting the stable ``uuid.uuid4`` in migrations
+    is the correct, faithful serialisation.
+
+    Per-model override: pass ``uuid_version=7`` (or ``4``) to pin a specific
+    table's pk to that version regardless of ``ICV_CORE_UUID_VERSION``. This is
+    the useful shape, opt a high-write table (events, audit logs, orders) into
+    time-sorted v7 for index locality without changing the project default, or
+    forcing v4 on a table whose id is public and must not leak a timestamp. The
+    override is a runtime-only attribute: it does NOT appear in ``deconstruct()``
+    (the field still freezes as ``UUIDField(default=uuid.uuid4)``), so pinning a
+    version generates no migration and keeps the issue-#19 drift fix intact.
+
+    A model opts in by overriding the inherited pk::
+
+        from icv_core.models import BaseModel
+        from icv_core.models.base import VersionedUUIDField
+
+        class SiteEvent(BaseModel):
+            id = VersionedUUIDField(primary_key=True, editable=False, uuid_version=7)
     """
 
-    def __init__(self, *args: object, **kwargs: object) -> None:
+    def __init__(self, *args: object, uuid_version: int | None = None, **kwargs: object) -> None:
+        # Per-field version override (None = follow the ICV_CORE_UUID_VERSION
+        # setting at insert time). Runtime-only; deliberately not serialised.
+        self.uuid_version = uuid_version
         # Report a plain uuid.uuid4 default in deconstruct/migrations; the real
         # value is produced by pre_save below.
         kwargs.setdefault("default", uuid.uuid4)
@@ -89,10 +113,11 @@ class VersionedUUIDField(models.UUIDField):
 
     def pre_save(self, model_instance: models.Model, add: bool):
         value = super().pre_save(model_instance, add)
-        # On insert with no explicit value, honour the runtime version switch
+        # On insert with no explicit value, honour the version switch (this
+        # field's uuid_version override if set, else the project setting)
         # instead of the plain uuid.uuid4 default carried for migration parity.
         if add and not getattr(model_instance, self.attname, None):
-            value = _make_uuid()
+            value = _make_uuid(version=self.uuid_version)
             setattr(model_instance, self.attname, value)
         return value
 
@@ -100,6 +125,8 @@ class VersionedUUIDField(models.UUIDField):
         name, _path, args, kwargs = super().deconstruct()
         # Freeze as a vanilla UUIDField(default=uuid.uuid4) so consumers'
         # existing migrations match exactly (path + default object identity).
+        # uuid_version is runtime-only and intentionally omitted, pinning a
+        # version must not produce a migration.
         return name, "django.db.models.UUIDField", args, kwargs
 
 
