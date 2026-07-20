@@ -2,7 +2,7 @@
 # They must be imported here so Django's app registry discovers them and
 # migration detection works correctly.
 from icv_core.audit.models import AdminActivityLog, AuditEntry, SystemAlert
-from icv_core.models.base import BaseModel, TimestampedModel, UUIDModel
+from icv_core.models.base import BaseModel, TimestampedModel, UUIDModel, VersionedUUIDField
 from icv_core.models.compliance import ComplianceModel
 from icv_core.models.soft_delete import SoftDeleteModel
 
@@ -14,6 +14,7 @@ __all__ = [
     "UUIDModel",
     "TimestampedModel",
     "BaseModel",
+    "VersionedUUIDField",
     "SoftDeleteModel",
     "ComplianceModel",
     # tenancy

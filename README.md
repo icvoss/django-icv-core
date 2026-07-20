@@ -88,6 +88,34 @@ article.created_at  # datetime: set on creation, never changes
 article.updated_at  # datetime: updated automatically on every save
 ```
 
+#### UUID version: project-wide and per-model
+
+By default the primary key is a random UUID v4. Set `ICV_CORE_UUID_VERSION = 7`
+to make every `BaseModel` pk a time-sorted UUID v7 (RFC 9562, better index
+locality on high-write tables; note v7 encodes the row's creation timestamp).
+
+The version is a **runtime** choice, it is never baked into migrations (the pk
+always freezes as `UUIDField(default=uuid.uuid4)`), so changing it generates no
+migration and affects only rows created afterwards.
+
+To pin a **single table** to a version regardless of the project default,
+override its pk with `VersionedUUIDField(uuid_version=...)`. Opt a high-write
+table into v7 without changing the default, or force v4 on a table whose id is
+public and must not leak a timestamp:
+
+```python
+from icv_core.models import BaseModel
+from icv_core.models.base import VersionedUUIDField
+
+
+class SiteEvent(BaseModel):
+    # time-sorted pk for this high-write table only; the project default is unchanged
+    id = VersionedUUIDField(primary_key=True, editable=False, uuid_version=7)
+```
+
+The `uuid_version` override is runtime-only and does not appear in the field's
+migration state, so pinning a version produces no migration.
+
 ---
 
 ### SoftDeleteModel: safe record removal
