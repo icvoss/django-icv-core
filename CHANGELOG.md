@@ -4,6 +4,30 @@ All notable changes to django-icv-core will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+## [0.4.2] - 2026-07-20
+
+### Fixed
+
+- The `BaseModel` UUID primary-key default now serialises in migrations as
+  `uuid.uuid4` instead of `icv_core.models.base._make_uuid`, while the runtime
+  callable is unchanged and still honours the `ICV_CORE_UUID_VERSION` (v4/v7)
+  switch. Every icvoss package that uses `BaseModel` ships `0001_initial`
+  migrations declaring `default=uuid.uuid4` (generated without icv-core
+  installed); before this change, installing icv-core alongside them made
+  their models' runtime default drift from their own shipped migrations, so
+  `makemigrations --check` demanded an `Alter field id` on every model in every
+  consumer. icv-core is UUID-version agnostic (the version is a per-deployment
+  runtime setting, not a data-model fact baked into shipped migrations), so
+  recording the stable `uuid.uuid4` is the correct serialisation. Fixes the
+  family-wide drift with no consumer re-release. See umbrella issue #19.
+- Package the PEP 561 `py.typed` marker in the built wheel. The marker
+  existed on disk but was never declared in `[tool.setuptools.package-data]`,
+  so setuptools dropped it from every published wheel and downstream type
+  checkers saw `icv_core` as untyped. Now declared and verified present in
+  the wheel.
+
 ## [0.4.1] - 2026-07-12
 
 ### Fixed

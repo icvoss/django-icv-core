@@ -35,6 +35,40 @@ class TestUUIDModel:
         assert isinstance(value, uuid.UUID)
         assert value.version == 4
 
+    def test_make_uuid_serialises_as_uuid4(self):
+        """The pk default MUST serialise in migrations as ``uuid.uuid4``.
+
+        Guards the __module__/__qualname__ alias on ``_make_uuid`` (see
+        icv_core/models/base.py and umbrella issue #19). Every icvoss package
+        ships ``0001_initial`` migrations declaring ``default=uuid.uuid4``;
+        if this callable serialises as ``icv_core.models.base._make_uuid``
+        instead, installing icv-core makes those consumers' models drift from
+        their own shipped migrations, so ``makemigrations --check`` fails
+        across the whole family. This asserts the serialised form matches bare
+        ``uuid.uuid4`` exactly, so the drift cannot return.
+        """
+        from django.db.migrations.serializer import serializer_factory
+
+        from icv_core.models.base import _make_uuid
+
+        make_uuid_repr, _ = serializer_factory(_make_uuid).serialize()
+        uuid4_repr, _ = serializer_factory(uuid.uuid4).serialize()
+        assert make_uuid_repr == uuid4_repr == "uuid.uuid4"
+
+    def test_make_uuid_still_honours_version_switch_after_alias(self, settings):
+        """The serialisation alias must not change runtime behaviour.
+
+        Only ``__module__``/``__qualname__`` are overridden (for the migration
+        serialiser); the callable itself still reads ``ICV_CORE_UUID_VERSION``
+        at call time.
+        """
+        from icv_core.models.base import _make_uuid
+
+        settings.ICV_CORE_UUID_VERSION = 7
+        assert _make_uuid().version == 7
+        settings.ICV_CORE_UUID_VERSION = 4
+        assert _make_uuid().version == 4
+
     def test_uuid_version_7_returns_v7(self, settings):
         """When ICV_CORE_UUID_VERSION=7 is set, _make_uuid() returns a v7 UUID."""
         settings.ICV_CORE_UUID_VERSION = 7
