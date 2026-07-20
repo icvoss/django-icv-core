@@ -51,6 +51,39 @@ def _make_uuid() -> uuid.UUID:
     return uuid.uuid4()
 
 
+# Make this callable SERIALISE in migrations as ``uuid.uuid4`` rather than
+# ``icv_core.models.base._make_uuid``. Django's migration serialiser records a
+# function default by its ``__module__`` + ``__qualname__``, so overriding them
+# here (and only here, the callable itself is unchanged) makes ``UUIDModel.id``
+# freeze as ``default=uuid.uuid4``.
+#
+# Why this is correct, not a hack:
+#   - icv-core is UUID-version AGNOSTIC. The v4/v7 choice is a per-deployment
+#     performance decision (``ICV_CORE_UUID_VERSION`` in the consuming project's
+#     settings), resolved at RUNTIME by this function. It is not a data-model
+#     fact and must not be baked into shipped, immutable migrations.
+#   - The migration's serialised default is only the column-fill callable; the
+#     live model default (this function) is what actually generates ids, so the
+#     serialised name is cosmetic. Recording the stable, version-neutral
+#     ``uuid.uuid4`` is the faithful encoding of "defaults to a generated UUID,
+#     version chosen at runtime".
+#   - It also removes a real, recurring drift: every icvoss package that uses
+#     ``BaseModel`` ships ``0001_initial`` migrations declaring
+#     ``default=uuid.uuid4`` (generated without icv-core installed). Without this
+#     alias, installing icv-core makes those models' runtime default
+#     (``_make_uuid``) mismatch their own shipped migration, so
+#     ``makemigrations --check`` demands an ``Alter field id`` on every model in
+#     every consumer. See umbrella issue #19. This alias makes the runtime and
+#     the shipped migrations serialise identically, killing the drift with no
+#     consumer re-release.
+#
+# Do NOT "tidy" these two lines away: doing so reintroduces the family-wide
+# migration drift. A regression test (test_make_uuid_serialises_as_uuid4) guards
+# them.
+_make_uuid.__module__ = "uuid"
+_make_uuid.__qualname__ = "uuid4"
+
+
 class UUIDModel(models.Model):
     """Abstract model providing a UUID primary key."""
 
