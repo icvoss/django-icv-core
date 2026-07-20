@@ -51,45 +51,63 @@ def _make_uuid() -> uuid.UUID:
     return uuid.uuid4()
 
 
-# Make this callable SERIALISE in migrations as ``uuid.uuid4`` rather than
-# ``icv_core.models.base._make_uuid``. Django's migration serialiser records a
-# function default by its ``__module__`` + ``__qualname__``, so overriding them
-# here (and only here, the callable itself is unchanged) makes ``UUIDModel.id``
-# freeze as ``default=uuid.uuid4``.
-#
-# Why this is correct, not a hack:
-#   - icv-core is UUID-version AGNOSTIC. The v4/v7 choice is a per-deployment
-#     performance decision (``ICV_CORE_UUID_VERSION`` in the consuming project's
-#     settings), resolved at RUNTIME by this function. It is not a data-model
-#     fact and must not be baked into shipped, immutable migrations.
-#   - The migration's serialised default is only the column-fill callable; the
-#     live model default (this function) is what actually generates ids, so the
-#     serialised name is cosmetic. Recording the stable, version-neutral
-#     ``uuid.uuid4`` is the faithful encoding of "defaults to a generated UUID,
-#     version chosen at runtime".
-#   - It also removes a real, recurring drift: every icvoss package that uses
-#     ``BaseModel`` ships ``0001_initial`` migrations declaring
-#     ``default=uuid.uuid4`` (generated without icv-core installed). Without this
-#     alias, installing icv-core makes those models' runtime default
-#     (``_make_uuid``) mismatch their own shipped migration, so
-#     ``makemigrations --check`` demands an ``Alter field id`` on every model in
-#     every consumer. See umbrella issue #19. This alias makes the runtime and
-#     the shipped migrations serialise identically, killing the drift with no
-#     consumer re-release.
-#
-# Do NOT "tidy" these two lines away: doing so reintroduces the family-wide
-# migration drift. A regression test (test_make_uuid_serialises_as_uuid4) guards
-# them.
-_make_uuid.__module__ = "uuid"
-_make_uuid.__qualname__ = "uuid4"
+class VersionedUUIDField(models.UUIDField):
+    """
+    A UUID primary-key field that is UUID-version agnostic in migrations but
+    honours ``ICV_CORE_UUID_VERSION`` at runtime.
+
+    Why this exists (umbrella issue #19): every icvoss package that uses
+    ``BaseModel`` ships ``0001_initial`` migrations declaring
+    ``default=uuid.uuid4`` (they were generated without icv-core installed).
+    If icv-core's pk field carried ``default=_make_uuid``, then installing
+    icv-core alongside those packages makes their runtime model default differ
+    from their own shipped migration, and Django's autodetector demands an
+    ``Alter field id`` on every model in every consumer. Crucially, matching
+    only the *serialised name* is not enough: the autodetector compares the
+    deconstructed ``default`` by object identity, so a callable that merely
+    prints as ``uuid.uuid4`` is still seen as a change.
+
+    This field solves it at the right layer:
+      - ``deconstruct()`` reports a plain ``django.db.models.UUIDField`` with
+        ``default=uuid.uuid4`` (the real object), so it is byte-identical AND
+        identity-identical to what consumers already ship, no drift, no
+        consumer re-release.
+      - ``pre_save()`` generates the value via ``_make_uuid`` (the
+        ``ICV_CORE_UUID_VERSION`` v4/v7 switch), so the runtime behaviour is
+        preserved.
+
+    The version is a per-deployment performance choice (a runtime setting), not
+    a data-model fact to bake into immutable migrations, so reporting the
+    stable ``uuid.uuid4`` in migrations is the correct, faithful serialisation.
+    """
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        # Report a plain uuid.uuid4 default in deconstruct/migrations; the real
+        # value is produced by pre_save below.
+        kwargs.setdefault("default", uuid.uuid4)
+        super().__init__(*args, **kwargs)
+
+    def pre_save(self, model_instance: models.Model, add: bool):
+        value = super().pre_save(model_instance, add)
+        # On insert with no explicit value, honour the runtime version switch
+        # instead of the plain uuid.uuid4 default carried for migration parity.
+        if add and not getattr(model_instance, self.attname, None):
+            value = _make_uuid()
+            setattr(model_instance, self.attname, value)
+        return value
+
+    def deconstruct(self):
+        name, _path, args, kwargs = super().deconstruct()
+        # Freeze as a vanilla UUIDField(default=uuid.uuid4) so consumers'
+        # existing migrations match exactly (path + default object identity).
+        return name, "django.db.models.UUIDField", args, kwargs
 
 
 class UUIDModel(models.Model):
     """Abstract model providing a UUID primary key."""
 
-    id = models.UUIDField(
+    id = VersionedUUIDField(
         primary_key=True,
-        default=_make_uuid,
         editable=False,
         verbose_name=_("ID"),
     )

@@ -6,22 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-07-20
+
+### Fixed
+
+- Actually eliminate the family-wide migration drift (umbrella issue #19).
+  0.4.2 tried to fix it by making the `_make_uuid` default serialise as
+  `uuid.uuid4`, but Django's migration autodetector compares a field's
+  deconstructed `default` by object IDENTITY, not by serialised string, so the
+  drift persisted (verified against a host with all packages installed: still
+  108 `Alter field id` lines). Replaced with a `VersionedUUIDField`
+  (`models.UUIDField` subclass): its `deconstruct()` reports a plain
+  `django.db.models.UUIDField(default=uuid.uuid4)` (the real `uuid.uuid4`
+  object, identity-equal to what every consumer's `0001_initial` ships), while
+  its `pre_save()` generates the value via `_make_uuid`, preserving the
+  `ICV_CORE_UUID_VERSION` (v4/v7) runtime switch. Installing icv-core alongside
+  the family now produces no `Alter field id` drift on any consumer, with no
+  consumer re-release. Added migration `0003` realigning icv-core's own audit
+  models (whose `0002` recorded `_make_uuid`) back to `uuid.uuid4`; it is
+  state-only and emits no SQL. Verified against the deploy host: family UUID
+  drift went from 108 lines to 0 (two unrelated per-package migration gaps in
+  icv-cms-blocks and icv-media remain, tracked separately).
+
 ## [0.4.2] - 2026-07-20
 
 ### Fixed
 
-- The `BaseModel` UUID primary-key default now serialises in migrations as
-  `uuid.uuid4` instead of `icv_core.models.base._make_uuid`, while the runtime
-  callable is unchanged and still honours the `ICV_CORE_UUID_VERSION` (v4/v7)
-  switch. Every icvoss package that uses `BaseModel` ships `0001_initial`
-  migrations declaring `default=uuid.uuid4` (generated without icv-core
-  installed); before this change, installing icv-core alongside them made
-  their models' runtime default drift from their own shipped migrations, so
-  `makemigrations --check` demanded an `Alter field id` on every model in every
-  consumer. icv-core is UUID-version agnostic (the version is a per-deployment
-  runtime setting, not a data-model fact baked into shipped migrations), so
-  recording the stable `uuid.uuid4` is the correct serialisation. Fixes the
-  family-wide drift with no consumer re-release. See umbrella issue #19.
+- (Superseded by 0.4.3: this release's migration-serialisation approach did not
+  eliminate the drift, see 0.4.3.) Attempted to make the `BaseModel` UUID pk
+  default serialise as `uuid.uuid4`; the runtime v4/v7 switch was preserved.
 - Package the PEP 561 `py.typed` marker in the built wheel. The marker
   existed on disk but was never declared in `[tool.setuptools.package-data]`,
   so setuptools dropped it from every published wheel and downstream type
