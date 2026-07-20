@@ -35,39 +35,41 @@ class TestUUIDModel:
         assert isinstance(value, uuid.UUID)
         assert value.version == 4
 
-    def test_make_uuid_serialises_as_uuid4(self):
-        """The pk default MUST serialise in migrations as ``uuid.uuid4``.
+    def test_pk_field_deconstructs_as_plain_uuidfield_default_uuid4(self):
+        """The pk field MUST deconstruct as ``UUIDField(default=uuid.uuid4)``.
 
-        Guards the __module__/__qualname__ alias on ``_make_uuid`` (see
-        icv_core/models/base.py and umbrella issue #19). Every icvoss package
-        ships ``0001_initial`` migrations declaring ``default=uuid.uuid4``;
-        if this callable serialises as ``icv_core.models.base._make_uuid``
-        instead, installing icv-core makes those consumers' models drift from
-        their own shipped migrations, so ``makemigrations --check`` fails
-        across the whole family. This asserts the serialised form matches bare
-        ``uuid.uuid4`` exactly, so the drift cannot return.
+        This is the layer Django's autodetector actually compares (issue #19).
+        Every icvoss package ships ``0001_initial`` migrations declaring a plain
+        ``models.UUIDField(default=uuid.uuid4)``. The autodetector compares the
+        deconstructed field by path + the ``default`` object's IDENTITY, so it
+        is not enough for a callable to merely serialise as ``uuid.uuid4``: the
+        field must deconstruct to the vanilla path with the REAL ``uuid.uuid4``
+        object. ``VersionedUUIDField`` does exactly that, so installing icv-core
+        alongside a consumer produces no ``Alter field id`` drift.
         """
-        from django.db.migrations.serializer import serializer_factory
+        field = UUIDModel._meta.get_field("id")
+        _name, path, _args, kwargs = field.deconstruct()
+        assert path == "django.db.models.UUIDField"
+        # Same object, not merely same repr: this is what the autodetector uses.
+        assert kwargs["default"] is uuid.uuid4
 
-        from icv_core.models.base import _make_uuid
+    def test_pk_field_honours_version_switch_at_pre_save(self, settings):
+        """VersionedUUIDField still honours ICV_CORE_UUID_VERSION at insert.
 
-        make_uuid_repr, _ = serializer_factory(_make_uuid).serialize()
-        uuid4_repr, _ = serializer_factory(uuid.uuid4).serialize()
-        assert make_uuid_repr == uuid4_repr == "uuid.uuid4"
-
-    def test_make_uuid_still_honours_version_switch_after_alias(self, settings):
-        """The serialisation alias must not change runtime behaviour.
-
-        Only ``__module__``/``__qualname__`` are overridden (for the migration
-        serialiser); the callable itself still reads ``ICV_CORE_UUID_VERSION``
-        at call time.
+        The migration parity (default=uuid.uuid4) must not cost the runtime
+        v4/v7 switch: pre_save generates the value via _make_uuid.
         """
-        from icv_core.models.base import _make_uuid
+        field = ConcreteBaseModel._meta.get_field("id")
 
         settings.ICV_CORE_UUID_VERSION = 7
-        assert _make_uuid().version == 7
+        instance = ConcreteBaseModel()
+        instance.id = None
+        assert field.pre_save(instance, add=True).version == 7
+
         settings.ICV_CORE_UUID_VERSION = 4
-        assert _make_uuid().version == 4
+        instance2 = ConcreteBaseModel()
+        instance2.id = None
+        assert field.pre_save(instance2, add=True).version == 4
 
     def test_uuid_version_7_returns_v7(self, settings):
         """When ICV_CORE_UUID_VERSION=7 is set, _make_uuid() returns a v7 UUID."""
