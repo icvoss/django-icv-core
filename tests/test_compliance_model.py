@@ -23,13 +23,13 @@ User = get_user_model()
 
 
 def _set_current_user(user):
-    """Directly set the thread-local current user (simulates middleware)."""
-    _current_user.user = user
+    """Directly set the context-local current user (simulates middleware)."""
+    _current_user.set(user)
 
 
 def _clear_current_user():
-    """Clear the thread-local current user."""
-    _current_user.user = None
+    """Clear the context-local current user."""
+    _current_user.set(None)
 
 
 # ---------------------------------------------------------------------------
