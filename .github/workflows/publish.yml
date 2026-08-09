@@ -120,6 +120,19 @@ jobs:
       - name: Verify distributions with twine
         run: twine check dist/*
 
+      - name: Assert py.typed ships in the wheel
+        # twine check only validates PyPI metadata and README rendering, never
+        # wheel file contents. A package-data entry silently dropped from
+        # [tool.setuptools.package-data] (the py.typed marker is the recurring
+        # case) ships a broken wheel that twine check passes clean. See #3.
+        run: |
+          whl=$(ls dist/*.whl)
+          if ! unzip -l "$whl" | grep -q '/py\.typed$'; then
+            echo "::error::py.typed missing from $whl"
+            exit 1
+          fi
+          echo "py.typed present in $whl"
+
       - name: Upload dist artifacts
         uses: actions/upload-artifact@v7
         with:
