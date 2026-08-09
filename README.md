@@ -21,7 +21,7 @@ Use it as a standalone package or as the base for other `django-icv-*` packages.
 - **`BaseModel`**: UUID primary key (v4 by default, v7 opt-in) and auto-managed `created_at`/`updated_at` timestamps
 - **`SoftDeleteModel`**: Safe record removal with `soft_delete()` and `restore()`; default manager excludes deleted records automatically
 - **`SoftDeleteManager` / `SoftDeleteQuerySet`**: `.active()`, `.deleted()`, `.with_deleted()` on every soft-delete model
-- **`CurrentUserMiddleware`**: Thread-local request user for automatic `created_by`/`updated_by` population
+- **`CurrentUserMiddleware`**: Async-safe (contextvars-backed) request user for automatic `created_by`/`updated_by` population
 - **Audit subsystem** (opt-in via `ICV_CORE_AUDIT_ENABLED`): Immutable `AuditEntry`, `AdminActivityLog`, `SystemAlert`, `AuditMixin`, `@audited` decorator, and management commands
 - **Template tags**: `cents_to_currency`, `cents_to_amount`, `time_since_short`
 - **Django system checks**: Configuration validation at startup
@@ -171,7 +171,7 @@ ICV_CORE_ALLOW_HARD_DELETE = True
 
 ### CurrentUserMiddleware: automatic created_by/updated_by
 
-Add the middleware to make the current request user available to models without passing it through every service call.
+Add the middleware to make the current request user available to models without passing it through every service call. The user is stored in a `contextvars.ContextVar`, so concurrent requests handled on the same thread under ASGI (async views, or `sync_to_async`-bridged sync views) each see their own value; a request never observes another concurrently-running request's user.
 
 ```python
 # settings.py
