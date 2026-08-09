@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Circular import between `icv_core.models` and `icv_core.audit.models` when
+  `icv_core.audit` is added to `INSTALLED_APPS` directly (#14). The
+  documented, supported install (`icv_core` in `INSTALLED_APPS` plus
+  `ICV_CORE_AUDIT_ENABLED=True`) was never affected; `icv_core.models`
+  re-exported `AuditEntry`, `AdminActivityLog`, and `SystemAlert` for
+  convenience, and that eager re-export is what forced
+  `icv_core.audit.models` to import before `icv_core.models.base` had
+  finished defining `BaseModel`. The re-export is removed: nothing in the
+  package imported audit models through `icv_core.models` internally, and
+  the documented import path has always been `icv_core.audit.models`.
+  `icv_core.audit` can now also be installed on its own, without `icv_core`.
+- `CurrentUserMiddleware` used `threading.local()` to store the current
+  request user, which is not isolated per concurrent request under ASGI: two
+  requests running as interleaved `asyncio.Task`s on the same thread (async
+  views, or `sync_to_async`-bridged sync views) could observe each other's
+  user, corrupting `created_by`/`updated_by` attribution (#13). Replaced with
+  `contextvars.ContextVar`, which is isolated per task, and added dual
+  sync/async support (`asgiref.sync.iscoroutinefunction`/
+  `markcoroutinefunction`) so the middleware no longer forces an
+  otherwise-async request pipeline through a sync-only adapter.
+
+### Changed
+
+- `CurrentUserMiddleware` no longer subclasses `MiddlewareMixin` and no
+  longer exposes `process_request`/`process_response` as separate hooks;
+  it is now a plain dual sync/async middleware callable. `get_current_user()`
+  is unaffected. `process_exception` is kept for compatibility with code that
+  invokes it directly.
+
 ## [0.4.4] - 2026-07-20
 
 ### Added
