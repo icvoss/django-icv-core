@@ -4,7 +4,7 @@ All notable changes to django-icv-core will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.5.0] - 2026-08-11
 
 ### Changed
 
