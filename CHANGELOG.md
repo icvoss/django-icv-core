@@ -4,6 +4,22 @@ All notable changes to django-icv-core will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Changed
+
+- **Behaviour changing:** `BaseModel` no longer sets a default `Meta.ordering`
+  (ADR-066). A `Meta.ordering` on a shared base defeats
+  `values()`/`values_list()` combined with `distinct()` in every inheriting
+  model. Concrete models that relied on the inherited `-created_at` ordering
+  without declaring their own `ordering` will lose that implicit
+  newest-first order; add `ordering = ["-created_at"]` (or whatever order is
+  needed) to the model's own `Meta` to keep current behaviour. Consumers
+  will see Django generate a no-op `AlterModelOptions` migration for any
+  concrete model whose effective ordering was previously inherited.
+  `ICV_CORE_DEFAULT_ORDERING` is removed: it was documented but never read
+  anywhere in the package.
+
 ## [0.4.5] - 2026-08-09
 
 ### Fixed

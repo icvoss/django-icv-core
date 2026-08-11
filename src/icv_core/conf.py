@@ -23,9 +23,6 @@ ICV_CORE_UUID_VERSION: int = getattr(settings, "ICV_CORE_UUID_VERSION", 4)
 # Whether BaseModel includes created_by/updated_by fields (requires CurrentUserMiddleware)
 ICV_CORE_TRACK_CREATED_BY: bool = getattr(settings, "ICV_CORE_TRACK_CREATED_BY", False)
 
-# Default ordering applied to BaseModel subclasses
-ICV_CORE_DEFAULT_ORDERING: str = getattr(settings, "ICV_CORE_DEFAULT_ORDERING", "-created_at")
-
 # Whether SoftDeleteModel.delete() performs a hard delete instead of raising ProtectedError
 ICV_CORE_ALLOW_HARD_DELETE: bool = getattr(settings, "ICV_CORE_ALLOW_HARD_DELETE", False)
 
