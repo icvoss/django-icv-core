@@ -5,6 +5,6 @@ Provides abstract base models, custom managers, middleware, utilities,
 template tags, and an optional audit subsystem.
 """
 
-__version__ = "0.4.5"
+__version__ = "0.5.0"
 
 default_app_config = "icv_core.apps.IcvCoreConfig"
