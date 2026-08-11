@@ -167,8 +167,12 @@ class BaseModel(UUIDModel, TimestampedModel):
     All ICV-Django concrete models should inherit from this unless there is a
     specific reason not to (e.g., an append-only log table that must not have
     updated_at).
+
+    Deliberately sets no default ordering (ADR-066): a ``Meta.ordering`` on a
+    shared base defeats ``values()``/``values_list()`` combined with
+    ``distinct()`` in every inheriting model, so order explicitly at the call
+    site or in the subclass ``Meta`` instead.
     """
 
     class Meta:
         abstract = True
-        ordering = ["-created_at"]

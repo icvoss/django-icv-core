@@ -170,11 +170,12 @@ class TestBaseModel:
         assert ConcreteBaseModel._meta.get_field("created_at")
         assert ConcreteBaseModel._meta.get_field("updated_at")
 
-    def test_default_ordering(self):
-        # BaseModel's abstract Meta declares -created_at ordering.
-        # Django 6.0+ does not propagate abstract Meta.ordering to concrete
-        # subclasses that define their own Meta; verify on the abstract itself.
-        assert BaseModel._meta.ordering == ["-created_at"]
+    def test_no_default_ordering(self):
+        # BaseModel deliberately sets no default ordering (ADR-066): a
+        # Meta.ordering on a shared base defeats values()/values_list()
+        # combined with distinct() in every inheriting model. Models needing
+        # a default order declare it themselves.
+        assert BaseModel._meta.ordering == []
 
     def test_inherits_uuid_and_timestamp(self):
         field_names = [f.name for f in ConcreteBaseModel._meta.fields]

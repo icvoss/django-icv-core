@@ -76,7 +76,7 @@ class Article(BaseModel):
     title = models.CharField(max_length=255)
     body = models.TextField()
 
-    class Meta(BaseModel.Meta):
+    class Meta:
         verbose_name_plural = "articles"
 ```
 
@@ -87,6 +87,14 @@ article.id          # UUID4: e.g. '3f2504e0-4f89-11d3-9a0c-0305e82c3301'
 article.created_at  # datetime: set on creation, never changes
 article.updated_at  # datetime: updated automatically on every save
 ```
+
+> **No default ordering.** `BaseModel` deliberately sets no default
+> `Meta.ordering` (ADR-066): a `Meta.ordering` on a shared base defeats
+> `values()`/`values_list()` combined with `distinct()` in every inheriting
+> model. A model that needs newest-first (or any other default order)
+> declares `ordering` in its own `Meta`, and any `values()`/`distinct()`
+> query on an ordered model must call `.order_by()` explicitly, since
+> `distinct()` folds ordering columns into the comparison.
 
 #### UUID version: project-wide and per-model
 
@@ -307,7 +315,6 @@ All settings use the `ICV_CORE_` prefix. Every setting has a sensible default: o
 | `ICV_CORE_UUID_VERSION` | `4` | UUID version for primary keys. `4` = random; `7` = time-sorted (requires Python 3.12+) |
 | `ICV_CORE_ALLOW_HARD_DELETE` | `False` | When `True`, `.delete()` performs a hard delete on `SoftDeleteModel` instead of raising `ProtectedError` |
 | `ICV_CORE_TRACK_CREATED_BY` | `False` | Enable `created_by`/`updated_by` tracking. Requires `CurrentUserMiddleware` |
-| `ICV_CORE_DEFAULT_ORDERING` | `"-created_at"` | Default ordering applied to `BaseModel` subclasses |
 
 ### Audit
 
