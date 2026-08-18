@@ -4,6 +4,13 @@ All notable changes to django-icv-core will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- **Django 6.1 added to the CI test matrix** and declared via the
+  `Framework :: Django :: 6.1` classifier.
+
 ## [0.5.0] - 2026-08-11
 
 ### Changed
