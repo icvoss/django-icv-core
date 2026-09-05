@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-05
+
 ### Added
 
 - **Django 6.1 added to the CI test matrix** and declared via the
