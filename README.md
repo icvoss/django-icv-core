@@ -306,7 +306,7 @@ Use [django-boundary](https://github.com/icvoss/django-boundary) instead. It pro
 
 ## Settings reference
 
-All settings use the `ICV_CORE_` prefix. Every setting has a sensible default: only override what you need.
+Most settings use the `ICV_CORE_` prefix. Every setting has a sensible default: only override what you need. The exception is `ICV_AUTH_USER_MODEL`, a fleet-global name shared by every icv package (ADR-037), never a per-package `ICV_CORE_` variant.
 
 ### Core
 
@@ -315,6 +315,7 @@ All settings use the `ICV_CORE_` prefix. Every setting has a sensible default: o
 | `ICV_CORE_UUID_VERSION` | `4` | UUID version for primary keys. `4` = random; `7` = time-sorted (requires Python 3.12+) |
 | `ICV_CORE_ALLOW_HARD_DELETE` | `False` | When `True`, `.delete()` performs a hard delete on `SoftDeleteModel` instead of raising `ProtectedError` |
 | `ICV_CORE_TRACK_CREATED_BY` | `False` | Enable `created_by`/`updated_by` tracking. Requires `CurrentUserMiddleware` |
+| `ICV_AUTH_USER_MODEL` | `settings.AUTH_USER_MODEL` | Which model icv-core's user FKs target (`AuditEntry.user`, `AdminActivityLog.admin_user`, `SystemAlert.resolved_by`, `ComplianceModel.created_by`/`updated_by`). Fleet-global (ADR-037); leave unset to use the project's own `AUTH_USER_MODEL` |
 
 ### Audit
 

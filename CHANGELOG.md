@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - **Django 6.1 added to the CI test matrix** and declared via the
   `Framework :: Django :: 6.1` classifier.
+- **`ICV_AUTH_USER_MODEL` honoured (ADR-037).** `AuditEntry.user`,
+  `AdminActivityLog.admin_user`, `SystemAlert.resolved_by`, and
+  `ComplianceModel.created_by`/`updated_by` now target the resolved
+  `ICV_AUTH_USER_MODEL` (falling back to `settings.AUTH_USER_MODEL`)
+  instead of `settings.AUTH_USER_MODEL` directly. With the override unset,
+  behaviour is unchanged and no migration is generated. A consumer that
+  sets `ICV_AUTH_USER_MODEL` to a model other than `AUTH_USER_MODEL` now
+  gets that routing honoured by icv-core's user FKs; previously it had no
+  effect. `icv_core.audit.tasks.log_event_async` resolves the user model
+  via `apps.get_model(ICV_AUTH_USER_MODEL)` for the same reason, replacing
+  `django.contrib.auth.get_user_model()`.
 
 ## [0.5.0] - 2026-08-11
 

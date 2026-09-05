@@ -11,6 +11,7 @@ from core_testapp.models import ConcreteComplianceModel
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from icv_core.conf import ICV_AUTH_USER_MODEL
 from icv_core.middleware import _current_user
 from icv_core.models.compliance import ComplianceModel
 
@@ -87,6 +88,21 @@ class TestComplianceModelStructure:
     def test_updated_by_on_delete_set_null(self):
         field = ComplianceModel._meta.get_field("updated_by")
         assert field.remote_field.on_delete is models.SET_NULL
+
+    def test_created_by_targets_resolved_auth_user_model(self):
+        """ADR-037: created_by targets ICV_AUTH_USER_MODEL, not
+        settings.AUTH_USER_MODEL directly.
+
+        Resolved against the concrete subclass: on the abstract
+        ComplianceModel itself, the FK's ``remote_field.model`` is still the
+        lazy reference string, not the resolved model class.
+        """
+        field = ConcreteComplianceModel._meta.get_field("created_by")
+        assert field.remote_field.model._meta.label == ICV_AUTH_USER_MODEL
+
+    def test_updated_by_targets_resolved_auth_user_model(self):
+        field = ConcreteComplianceModel._meta.get_field("updated_by")
+        assert field.remote_field.model._meta.label == ICV_AUTH_USER_MODEL
 
 
 # ---------------------------------------------------------------------------

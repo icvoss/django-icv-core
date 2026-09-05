@@ -1,9 +1,9 @@
 """ComplianceModel with created_by/updated_by user attribution tracking."""
 
-from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from icv_core.conf import ICV_AUTH_USER_MODEL
 from icv_core.models.base import BaseModel
 
 
@@ -29,7 +29,7 @@ class ComplianceModel(BaseModel):
     """
 
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        ICV_AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -38,7 +38,7 @@ class ComplianceModel(BaseModel):
         help_text=_("User who created this record."),
     )
     updated_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        ICV_AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

@@ -27,6 +27,17 @@ ICV_CORE_TRACK_CREATED_BY: bool = getattr(settings, "ICV_CORE_TRACK_CREATED_BY",
 ICV_CORE_ALLOW_HARD_DELETE: bool = getattr(settings, "ICV_CORE_ALLOW_HARD_DELETE", False)
 
 # ---------------------------------------------------------------------------
+# Fleet-global settings mirroring Django-native settings (ADR-037)
+# ---------------------------------------------------------------------------
+
+# Which model icv-core's user FKs target (AuditEntry.user, AdminActivityLog.
+# admin_user, SystemAlert.resolved_by, ComplianceModel.created_by/updated_by).
+# Django name with the ICV_ prefix; falls back to settings.AUTH_USER_MODEL,
+# so with the override unset the FK deconstructs identically and shipped
+# migrations stay byte-stable (ADR-037, "Migration-state consequence").
+ICV_AUTH_USER_MODEL: str = getattr(settings, "ICV_AUTH_USER_MODEL", settings.AUTH_USER_MODEL)
+
+# ---------------------------------------------------------------------------
 # Tenancy infrastructure settings
 # ---------------------------------------------------------------------------
 
