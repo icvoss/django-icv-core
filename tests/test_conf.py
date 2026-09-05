@@ -1,5 +1,7 @@
 """Tests for icv-core settings/conf module."""
 
+import importlib
+
 
 class TestGetSetting:
     """get_setting() returns values from Django settings with fallback defaults."""
@@ -51,3 +53,35 @@ class TestDefaultSettings:
         from icv_core import conf
 
         assert conf.ICV_CORE_TRACK_CREATED_BY is False
+
+
+class TestIcvAuthUserModel:
+    """ICV_AUTH_USER_MODEL (ADR-037) falls back to settings.AUTH_USER_MODEL.
+
+    conf.py resolves this as an eager module-level constant, the pattern
+    every other setting in this module already uses, so ``override_settings``
+    has no effect on an already-imported value: the module must be reloaded
+    for a changed override to take effect, exactly like every other
+    constant here (see TestDefaultSettings above). Each test reloads the
+    module back to its pre-override state before returning, so a later test
+    never sees a stale reloaded module left over from this one (the
+    ``settings`` fixture reverts the underlying Django setting on teardown,
+    but has no way to know ``conf`` needs reloading too).
+    """
+
+    def test_falls_back_to_auth_user_model_when_unset(self, settings):
+        from icv_core import conf
+
+        importlib.reload(conf)
+        assert conf.ICV_AUTH_USER_MODEL == settings.AUTH_USER_MODEL == "auth.User"
+
+    def test_honours_explicit_override(self, settings):
+        settings.ICV_AUTH_USER_MODEL = "auth.Group"
+        from icv_core import conf
+
+        importlib.reload(conf)
+        try:
+            assert conf.ICV_AUTH_USER_MODEL == "auth.Group"
+        finally:
+            del settings.ICV_AUTH_USER_MODEL
+            importlib.reload(conf)

@@ -4,13 +4,13 @@ Audit subsystem concrete models.
 These models are only created in the database when ICV_CORE_AUDIT_ENABLED=True.
 """
 
-from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from icv_core.conf import ICV_AUTH_USER_MODEL
 from icv_core.exceptions import ImmutableRecordError
 from icv_core.models.base import BaseModel
 
@@ -53,7 +53,7 @@ class AuditEntry(BaseModel):
         verbose_name=_("action"),
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        ICV_AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -133,7 +133,7 @@ class AdminActivityLog(BaseModel):
     """
 
     admin_user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        ICV_AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="admin_activity_logs",
         verbose_name=_("admin user"),
@@ -233,7 +233,7 @@ class SystemAlert(BaseModel):
         verbose_name=_("resolved"),
     )
     resolved_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        ICV_AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

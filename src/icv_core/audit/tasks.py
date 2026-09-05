@@ -26,9 +26,11 @@ def log_event_async(
 
     user = None
     if user_id is not None:
-        from django.contrib.auth import get_user_model
+        from django.apps import apps
 
-        User = get_user_model()
+        from icv_core.conf import ICV_AUTH_USER_MODEL
+
+        User = apps.get_model(ICV_AUTH_USER_MODEL)
         try:
             user = User.objects.get(pk=user_id)
         except User.DoesNotExist:
