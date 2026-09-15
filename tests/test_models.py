@@ -235,6 +235,27 @@ class TestSoftDeleteModel:
         assert obj.deleted_at is not None
 
     @pytest.mark.django_db
+    def test_post_soft_delete_receiver_error_leaves_the_row_inactive(self):
+        """The write precedes post_soft_delete receiver notification."""
+        from icv_core.signals import post_soft_delete
+
+        obj = ConcreteSoftDeleteModel.objects.create(title="receiver error")
+
+        def raise_from_receiver(**kwargs):
+            raise RuntimeError("receiver failed")
+
+        post_soft_delete.connect(raise_from_receiver, weak=False)
+        try:
+            with pytest.raises(RuntimeError, match="receiver failed"):
+                obj.soft_delete()
+        finally:
+            post_soft_delete.disconnect(raise_from_receiver)
+
+        obj.refresh_from_db()
+        assert obj.is_active is False
+        assert obj.deleted_at is not None
+
+    @pytest.mark.django_db
     def test_restore_sets_is_active_true(self):
         obj = ConcreteSoftDeleteModel.objects.create(title="test")
         obj.soft_delete()
