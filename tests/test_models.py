@@ -136,6 +136,15 @@ class TestUUIDModel:
         timestamps = [v.int >> 80 for v in values]
         assert timestamps == sorted(timestamps)
 
+    @pytest.mark.django_db
+    def test_objects_create_keeps_the_migration_safe_v4_default(self, settings):
+        """The global switch does not change ordinary BaseModel construction."""
+        settings.ICV_CORE_UUID_VERSION = 7
+
+        instance = ConcreteBaseModel.objects.create(name="ordinary create")
+
+        assert instance.pk.version == 4
+
 
 class TestTimestampedModel:
     """TimestampedModel provides created_at and updated_at."""
@@ -278,6 +287,15 @@ class TestSoftDeleteModel:
         obj_pk = obj.pk
         obj.hard_delete()
         assert not ConcreteSoftDeleteModel.all_objects.filter(pk=obj_pk).exists()
+
+    @pytest.mark.django_db
+    def test_queryset_delete_bypasses_the_instance_guard(self):
+        """Django bulk deletion does not call SoftDeleteModel.delete()."""
+        obj = ConcreteSoftDeleteModel.objects.create(title="bulk delete")
+
+        ConcreteSoftDeleteModel.objects.filter(pk=obj.pk).delete()
+
+        assert not ConcreteSoftDeleteModel.all_objects.filter(pk=obj.pk).exists()
 
     @pytest.mark.django_db
     def test_soft_delete_emits_signals(self):

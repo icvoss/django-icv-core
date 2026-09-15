@@ -84,22 +84,27 @@ class VersionedUUIDField(models.UUIDField):
     immutable migrations, so reporting the stable ``uuid.uuid4`` in migrations
     is the correct, faithful serialisation.
 
-    Per-model override: pass ``uuid_version=7`` (or ``4``) to pin a specific
-    table's pk to that version regardless of ``ICV_CORE_UUID_VERSION``. This is
-    the useful shape, opt a high-write table (events, audit logs, orders) into
-    time-sorted v7 for index locality without changing the project default, or
-    forcing v4 on a table whose id is public and must not leak a timestamp. The
-    override is a runtime-only attribute: it does NOT appear in ``deconstruct()``
-    (the field still freezes as ``UUIDField(default=uuid.uuid4)``), so pinning a
-    version generates no migration and keeps the issue-#19 drift fix intact.
+    Per-model override: pass ``uuid_version=7`` (or ``4``) to choose the
+    version that ``pre_save()`` generates when an insert reaches it with no
+    primary key. The override is a runtime-only attribute: it does NOT appear
+    in ``deconstruct()`` (the field still freezes as
+    ``UUIDField(default=uuid.uuid4)``), so pinning a version generates no
+    migration and keeps the issue-#19 drift fix intact. It does not affect
+    ordinary model construction, which receives the field's ``uuid.uuid4``
+    default before ``pre_save()``.
 
-    A model opts in by overriding the inherited pk::
+    A creation path can opt into generated v7 by overriding the inherited pk
+    and clearing the value before save::
 
         from icv_core.models import BaseModel
         from icv_core.models.base import VersionedUUIDField
 
         class SiteEvent(BaseModel):
             id = VersionedUUIDField(primary_key=True, editable=False, uuid_version=7)
+
+        event = SiteEvent(...)
+        event.id = None
+        event.save()
     """
 
     def __init__(self, *args: object, uuid_version: int | None = None, **kwargs: object) -> None:

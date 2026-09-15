@@ -18,7 +18,7 @@ Use it as a standalone package or as the base for other `django-icv-*` packages.
 
 ## Features
 
-- **`BaseModel`**: UUID primary key (v4 by default, v7 opt-in) and auto-managed `created_at`/`updated_at` timestamps
+- **`BaseModel`**: UUID primary key and auto-managed `created_at`/`updated_at` timestamps
 - **`SoftDeleteModel`**: Safe record removal with `soft_delete()` and `restore()`; default manager excludes deleted records automatically
 - **`SoftDeleteManager` / `SoftDeleteQuerySet`**: `.active()`, `.deleted()`, `.with_deleted()` on every soft-delete model
 - **`CurrentUserMiddleware`**: Async-safe (contextvars-backed) request user for automatic `created_by`/`updated_by` population
@@ -57,7 +57,10 @@ Run migrations:
 python manage.py migrate
 ```
 
-> **Note:** The audit subsystem tables are only created when `ICV_CORE_AUDIT_ENABLED = True`. Add `django.contrib.contenttypes` to `INSTALLED_APPS` before enabling audit.
+> **Note:** The bundled `icv_core` migration creates the audit tables whenever
+> `icv_core` is migrated. `ICV_CORE_AUDIT_ENABLED` gates audit writes and
+> signal-handler connection only. Add `django.contrib.contenttypes` to
+> `INSTALLED_APPS` before enabling audit.
 
 ---
 
@@ -96,20 +99,22 @@ article.updated_at  # datetime: updated automatically on every save
 > query on an ordered model must call `.order_by()` explicitly, since
 > `distinct()` folds ordering columns into the comparison.
 
-#### UUID version: project-wide and per-model
+#### UUID version runtime generation
 
-By default the primary key is a random UUID v4. Set `ICV_CORE_UUID_VERSION = 7`
-to make every `BaseModel` pk a time-sorted UUID v7 (RFC 9562, better index
-locality on high-write tables; note v7 encodes the row's creation timestamp).
+By default the primary key is a random UUID v4. `ICV_CORE_UUID_VERSION = 7`
+is consulted only when a `VersionedUUIDField` reaches `pre_save()` with no
+primary-key value. Ordinary `BaseModel.objects.create()` receives the
+migration-safe `uuid.uuid4` default first, so its primary key remains v4.
 
 The version is a **runtime** choice, it is never baked into migrations (the pk
 always freezes as `UUIDField(default=uuid.uuid4)`), so changing it generates no
 migration and affects only rows created afterwards.
 
-To pin a **single table** to a version regardless of the project default,
-override its pk with `VersionedUUIDField(uuid_version=...)`. Opt a high-write
-table into v7 without changing the default, or force v4 on a table whose id is
-public and must not leak a timestamp:
+To choose the runtime-generated version for a creation path that explicitly
+clears the primary key before saving, override the pk with
+`VersionedUUIDField(uuid_version=...)`. This does not alter its migration
+state and, by itself, does not change ordinary model construction, which still
+receives `uuid.uuid4` as its default:
 
 ```python
 from icv_core.models import BaseModel
@@ -117,12 +122,13 @@ from icv_core.models.base import VersionedUUIDField
 
 
 class SiteEvent(BaseModel):
-    # time-sorted pk for this high-write table only; the project default is unchanged
+    # Used only when the creation path sets event.id = None before saving.
     id = VersionedUUIDField(primary_key=True, editable=False, uuid_version=7)
 ```
 
 The `uuid_version` override is runtime-only and does not appear in the field's
-migration state, so pinning a version produces no migration.
+migration state. It does not make ordinary `SiteEvent.objects.create()` values
+v7.
 
 ---
 
@@ -312,7 +318,7 @@ Most settings use the `ICV_CORE_` prefix. Every setting has a sensible default: 
 
 | Setting | Default | Description |
 |---|---|---|
-| `ICV_CORE_UUID_VERSION` | `4` | UUID version for primary keys. `4` = random; `7` = time-sorted (requires Python 3.12+) |
+| `ICV_CORE_UUID_VERSION` | `4` | Used only when a `VersionedUUIDField` has no primary-key value at `pre_save()`: `4` = random; `7` = time-sorted. Ordinary `BaseModel.objects.create()` uses the migration-safe v4 default. |
 | `ICV_CORE_ALLOW_HARD_DELETE` | `False` | When `True`, `.delete()` performs a hard delete on `SoftDeleteModel` instead of raising `ProtectedError` |
 | `ICV_CORE_TRACK_CREATED_BY` | `False` | Enable `created_by`/`updated_by` tracking. Requires `CurrentUserMiddleware` |
 | `ICV_AUTH_USER_MODEL` | `settings.AUTH_USER_MODEL` | Which model icv-core's user FKs target (`AuditEntry.user`, `AdminActivityLog.admin_user`, `SystemAlert.resolved_by`, `ComplianceModel.created_by`/`updated_by`). Fleet-global (ADR-037); leave unset to use the project's own `AUTH_USER_MODEL` |
@@ -321,13 +327,13 @@ Most settings use the `ICV_CORE_` prefix. Every setting has a sensible default: 
 
 | Setting | Default | Description |
 |---|---|---|
-| `ICV_CORE_AUDIT_ENABLED` | `False` | Master switch. No tables are created and no signals connect when `False` |
+| `ICV_CORE_AUDIT_ENABLED` | `False` | Gates audit writes and audit signal-handler connection. It does not control migration-created audit tables. |
 | `ICV_CORE_AUDIT_RETENTION_DAYS` | `365` | Days before audit entries are eligible for archival |
 | `ICV_CORE_AUDIT_EXCLUDE_MODELS` | `[]` | Models excluded from `AuditMixin` auto-tracking. Format: `["app_label.ModelName"]` |
 | `ICV_CORE_AUDIT_TRACK_FIELD_CHANGES` | `True` | Capture old and new field values on UPDATE |
 | `ICV_CORE_AUDIT_CAPTURE_IP` | `True` | Record the request IP address in audit entries |
 | `ICV_CORE_AUDIT_CAPTURE_USER_AGENT` | `True` | Record the request user agent in audit entries |
-| `ICV_CORE_AUDIT_AUTO_MODEL_TRACKING` | `False` | Automatically log CREATE/UPDATE/DELETE on all `BaseModel` subclasses |
+| `ICV_CORE_AUDIT_AUTO_MODEL_TRACKING` | `False` | Compatibility setting currently unread by runtime code. It does not enable global model tracking. |
 | `ICV_CORE_AUDIT_ALERT_SEVERITY_LEVELS` | `["info", "warning", "error", "critical"]` | Available severity levels for `SystemAlert` |
 
 ---
@@ -337,7 +343,7 @@ Most settings use the `ICV_CORE_` prefix. Every setting has a sensible default: 
 | Command | Description |
 |---|---|
 | `icv_core_check` | Validate package configuration and emit any warnings |
-| `icv_core_audit_archive` | Archive audit entries older than `ICV_CORE_AUDIT_RETENTION_DAYS` |
+| `icv_core_audit_archive` | Report entries older than `ICV_CORE_AUDIT_RETENTION_DAYS` that are eligible for archival. It does not archive, export, or delete rows. |
 | `icv_core_audit_stats` | Print a summary of audit entry counts by event type and action |
 
 ---

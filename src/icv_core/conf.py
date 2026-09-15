@@ -57,7 +57,8 @@ ICV_TENANCY_ENFORCE_SCOPING: bool = getattr(settings, "ICV_TENANCY_ENFORCE_SCOPI
 # Audit subsystem settings
 # ---------------------------------------------------------------------------
 
-# Master switch — no tables created, no signals connected when False
+# Master switch for audit writes and signal-handler connection. The bundled
+# migration creates the audit tables independently of this runtime setting.
 ICV_CORE_AUDIT_ENABLED: bool = getattr(settings, "ICV_CORE_AUDIT_ENABLED", False)
 
 # Days to retain audit entries before archival

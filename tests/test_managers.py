@@ -1,7 +1,7 @@
 """Tests for icv-core custom managers."""
 
 import pytest
-from core_testapp.models import ConcreteSoftDeleteModel
+from core_testapp.models import ConcreteScopedModel, ConcreteScopedModelWithoutActive, ConcreteSoftDeleteModel
 
 
 class TestSoftDeleteManager:
@@ -84,3 +84,24 @@ class TestSoftDeleteFieldIsFixed:
         import icv_core.conf as conf
 
         assert not hasattr(conf, "ICV_CORE_SOFT_DELETE_FIELD")
+
+
+class TestScopedManager:
+    """ScopedManager returns chainable scope-filtered querysets."""
+
+    @pytest.mark.django_db
+    def test_for_scope_chains_with_active(self):
+        included = ConcreteScopedModel.objects.create(scope="first", is_active=True)
+        ConcreteScopedModel.objects.create(scope="first", is_active=False)
+        ConcreteScopedModel.objects.create(scope="second", is_active=True)
+
+        result = ConcreteScopedModel.objects.for_scope("scope", "first").active()
+
+        assert list(result) == [included]
+
+    @pytest.mark.django_db
+    def test_active_is_unfiltered_without_an_is_active_field(self):
+        first = ConcreteScopedModelWithoutActive.objects.create(scope="first")
+        second = ConcreteScopedModelWithoutActive.objects.create(scope="second")
+
+        assert set(ConcreteScopedModelWithoutActive.objects.active()) == {first, second}

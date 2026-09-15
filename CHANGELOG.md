@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-09-15
+
+### Fixed
+
+- Corrected the audit installation and setting documentation: migrating
+  `icv_core` always creates the bundled audit tables; `ICV_CORE_AUDIT_ENABLED`
+  gates audit writes and signal-handler connection only.
+- Corrected the UUID documentation: ordinary `BaseModel.objects.create()`
+  retains the migration-safe v4 default even when `ICV_CORE_UUID_VERSION=7`.
+  Consumers that require v7 primary keys must explicitly clear the field value
+  before insert; `VersionedUUIDField(uuid_version=7)` selects the generated
+  version for that cleared-value path.
+- Documented that `ICV_CORE_AUDIT_AUTO_MODEL_TRACKING` is currently unread,
+  and that `icv_core_audit_archive` reports eligibility without archiving,
+  exporting, or deleting entries.
+- Documented `log_event_async` behaviour when Celery is absent and when its
+  supplied user id cannot be resolved.
+
+### Added
+
+- Regression coverage for ordinary UUID construction, queryset-level
+  soft-delete bypass, `ScopedManager`, and `IcvSoftDeleteAdmin`.
+
 ## [0.6.0] - 2026-09-05
 
 ### Added
