@@ -136,6 +136,15 @@ class TestUUIDModel:
         timestamps = [v.int >> 80 for v in values]
         assert timestamps == sorted(timestamps)
 
+    @pytest.mark.django_db
+    def test_objects_create_keeps_the_migration_safe_v4_default(self, settings):
+        """The global switch does not change ordinary BaseModel construction."""
+        settings.ICV_CORE_UUID_VERSION = 7
+
+        instance = ConcreteBaseModel.objects.create(name="ordinary create")
+
+        assert instance.pk.version == 4
+
 
 class TestTimestampedModel:
     """TimestampedModel provides created_at and updated_at."""
@@ -226,6 +235,27 @@ class TestSoftDeleteModel:
         assert obj.deleted_at is not None
 
     @pytest.mark.django_db
+    def test_post_soft_delete_receiver_error_leaves_the_row_inactive(self):
+        """The write precedes post_soft_delete receiver notification."""
+        from icv_core.signals import post_soft_delete
+
+        obj = ConcreteSoftDeleteModel.objects.create(title="receiver error")
+
+        def raise_from_receiver(**kwargs):
+            raise RuntimeError("receiver failed")
+
+        post_soft_delete.connect(raise_from_receiver, weak=False)
+        try:
+            with pytest.raises(RuntimeError, match="receiver failed"):
+                obj.soft_delete()
+        finally:
+            post_soft_delete.disconnect(raise_from_receiver)
+
+        obj.refresh_from_db()
+        assert obj.is_active is False
+        assert obj.deleted_at is not None
+
+    @pytest.mark.django_db
     def test_restore_sets_is_active_true(self):
         obj = ConcreteSoftDeleteModel.objects.create(title="test")
         obj.soft_delete()
@@ -278,6 +308,15 @@ class TestSoftDeleteModel:
         obj_pk = obj.pk
         obj.hard_delete()
         assert not ConcreteSoftDeleteModel.all_objects.filter(pk=obj_pk).exists()
+
+    @pytest.mark.django_db
+    def test_queryset_delete_bypasses_the_instance_guard(self):
+        """Django bulk deletion does not call SoftDeleteModel.delete()."""
+        obj = ConcreteSoftDeleteModel.objects.create(title="bulk delete")
+
+        ConcreteSoftDeleteModel.objects.filter(pk=obj.pk).delete()
+
+        assert not ConcreteSoftDeleteModel.all_objects.filter(pk=obj.pk).exists()
 
     @pytest.mark.django_db
     def test_soft_delete_emits_signals(self):

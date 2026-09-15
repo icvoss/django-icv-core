@@ -62,17 +62,19 @@ def log_event(
         request: Optional Django request. When provided, IP and user agent
             are extracted automatically (respects ICV_CORE_AUDIT_CAPTURE_*
             settings).
-        async_mode: When True, the audit entry is written via Celery instead
-            of inline. Requires Celery to be configured in the consuming
-            project. Note: async_mode does not support the ``target``
-            parameter as model instances are not serialisable.
+        async_mode: When True, the audit entry is enqueued through Celery.
+            Requires Celery to be configured in the consuming project; when
+            Celery is absent, calling the unwrapped function's ``.delay()``
+            raises ``AttributeError`` before an entry is written. Note:
+            async_mode does not support the ``target`` parameter as model
+            instances are not serialisable.
 
     Returns:
         The created AuditEntry instance, or None if audit is disabled or
         async_mode is True (the entry is enqueued rather than returned).
 
     Raises:
-        ImportError: If async_mode=True but Celery is not installed.
+        AttributeError: If async_mode=True but Celery is not installed.
     """
     from icv_core.conf import get_setting
 

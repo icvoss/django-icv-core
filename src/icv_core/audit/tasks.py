@@ -16,11 +16,17 @@ def log_event_async(
     metadata: dict,
 ) -> None:
     """
-    Write an AuditEntry asynchronously via Celery.
+    Write an AuditEntry from the Celery task wrapper when Celery is available.
 
     Called by icv_core.audit.services.log_event when async_mode=True.
-    This function is wrapped as a Celery task at import time if Celery is
-    available; otherwise it falls back to a synchronous call with a warning.
+    This function is wrapped as a Celery task at import time when Celery is
+    available. Without Celery it remains an ordinary synchronous callable;
+    callers invoking ``async_mode=True`` still require Celery because they
+    call its ``.delay()`` method.
+
+    A ``user_id`` that no longer resolves creates an entry with ``user=None``.
+    This preserves the existing task contract, which treats a missing actor as
+    an anonymous system event rather than refusing the audit write.
     """
     from icv_core.audit.models import AuditEntry
 

@@ -1,7 +1,9 @@
 """
 Audit subsystem concrete models.
 
-These models are only created in the database when ICV_CORE_AUDIT_ENABLED=True.
+The bundled migration creates these tables whenever ``icv_core`` is migrated.
+``ICV_CORE_AUDIT_ENABLED`` gates audit writes and signal-handler connection,
+not the schema.
 """
 
 from django.contrib.contenttypes.fields import GenericForeignKey
