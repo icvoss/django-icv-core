@@ -56,11 +56,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
+        # Install from the package declaration (`.[dev]`), not a hand-listed
+        # set (icvoss/icv-oss-umbrella#560).
         run: |
           python -m pip install --upgrade pip
           pip install "Django~=${{ matrix.django-version }}.0"
-          pip install pytest pytest-django pytest-cov factory-boy
-          pip install -e .
+          pip install -e ".[dev]"
 
       - name: Run tests
         run: pytest tests/ -v --tb=short --color=yes
