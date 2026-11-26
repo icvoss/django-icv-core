@@ -1,10 +1,10 @@
 """
-icv-core — Foundation layer for ICV-Django packages.
+icv-core: foundation layer for ICV-Django packages.
 
 Provides abstract base models, custom managers, middleware, utilities,
 template tags, and an optional audit subsystem.
 """
 
-__version__ = "0.6.1"
+__version__ = "0.6.2"
 
 default_app_config = "icv_core.apps.IcvCoreConfig"
