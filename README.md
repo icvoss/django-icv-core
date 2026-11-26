@@ -136,6 +136,11 @@ v7.
 
 Records are never hard-deleted by default. `soft_delete()` sets `is_active=False` and records the timestamp. The default manager silently excludes deleted records from all queries.
 
+`soft_delete()` is **single-object only**. It does not cascade to related
+`SoftDeleteModel` rows: children or other linked soft-delete models stay
+active and visible until you soft-delete them yourself. Ordinary Django
+`on_delete` rules still apply only to hard deletes, not to `soft_delete()`.
+
 ```python
 from icv_core.models import SoftDeleteModel
 

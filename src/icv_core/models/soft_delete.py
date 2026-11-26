@@ -16,6 +16,11 @@ class SoftDeleteModel(BaseModel):
     is_active=False and records the deletion timestamp. The default manager
     excludes soft-deleted records; use all_objects to include them.
 
+    soft_delete() is single-object only: it does not cascade to related
+    SoftDeleteModel rows. Related records that also inherit SoftDeleteModel
+    stay active and visible unless the consumer soft-deletes them explicitly
+    (or hard-deletes via ordinary FK on_delete behaviour where applicable).
+
     Hard deletion is blocked unless ICV_CORE_ALLOW_HARD_DELETE=True. Use
     hard_delete() for permanent removal when required.
     """
@@ -40,7 +45,7 @@ class SoftDeleteModel(BaseModel):
         abstract = True
 
     def soft_delete(self) -> None:
-        """Mark this record as soft-deleted."""
+        """Mark this record as soft-deleted (this instance only; no cascade)."""
         from icv_core.signals import post_soft_delete, pre_soft_delete
 
         pre_soft_delete.send(sender=self.__class__, instance=self)

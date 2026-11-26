@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-26
+
+### Fixed
+
+- Documented that `SoftDeleteModel.soft_delete()` is single-object only and
+  does not cascade to related soft-delete models (README and model
+  docstring). Related `SoftDeleteModel` rows stay active until soft-deleted
+  explicitly. Closes the docs half of #7 item 3; the opt-in cascade feature
+  remains demand-gated.
+
 ## [0.6.1] - 2026-09-15
 
 ### Fixed
